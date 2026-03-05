@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meeting Assistant - Gemini Powered</title>
+    <style>
+      :root {
+        --bg-color: #0f172a;
+        --card-bg: rgba(30, 41, 59, 0.7);
+        --accent-blue: #38bdf8;
+        --accent-purple: #818cf8;
+        --accent-cyan: #06b6d4;
+        --text-main: #f1f5f9;
+        --text-sub: #94a3b8;
+        --border-color: rgba(255, 255, 255, 0.1);
+      }
+
+        body { 
+            font-family: 'Inter', 'Microsoft JhengHei', -apple-system, sans-serif; 
+            padding: 20px; 
+            max-width: 900px; 
+            margin: 0 auto;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.5;
+        }
+        
+        .container { 
+            border: 1px solid var(--border-color); 
+            padding: 20px; 
+            border-radius: 12px; 
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            margin-bottom: 30px;
+        }
+        
+        h1 { 
+            color: var(--text-main); 
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 0;
+            font-size: 24px;
+        }
+        
+        .section { 
+            margin: 20px 0; 
+            padding: 20px;
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+        }
+        
+        .section h2 {
+            margin-top: 0;
+            color: var(--accent-blue);
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        button { 
+            padding: 10px 16px; 
+            background: var(--accent-blue); 
+            color: white; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        
+        button:hover { 
+            background: #0ea5e9;
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        button.recording {
+            background: #ef4444;
+            animation: pulse 1.5s infinite;
+            position: relative;
+            padding-right: 35px;
+        }
+
+        button.recording::after {
+            content: '';
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: white;
+            border-radius: 50%;
+            right: 12px;
+            animation: blink 0.8s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        button.success {
+            background: #10b981;
+        }
+        
+        button.success:hover {
+            background: #059669;
+        }
+        
+        button.loading::after {
+            content: '';
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
+            margin-left: 4px;
+        }
+        
+        textarea {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-family: 'Inter', 'Microsoft JhengHei', monospace;
+            font-size: 14px;
+            resize: vertical;
+            box-sizing: border-box;
+            transition: all 0.3s;
+            line-height: 1.6;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+        
+        #textboxA { min-height: 150px; margin-top: 15px; }
+        #textboxC { 
+            min-height: 200px; 
+            background: rgba(0, 0, 0, 0.5); 
+            color: var(--accent-cyan);
+        }
+        
+        .prompt-input-group {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        #textboxB { flex: 1; min-height: 60px; }
+        
+        .add-prompt-btn {
+            padding: 10px 12px;
+            min-width: 45px;
+            font-size: 20px;
+        }
+        
+        .prompt-cards-container {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding: 10px 0;
+            margin-top: 15px;
+        }
+        
+        .prompt-card {
+            flex-shrink: 0;
+            min-width: 180px;
+            max-width: 220px;
+            padding: 12px 15px;
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.1), rgba(129, 140, 248, 0.1));
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            position: relative;
+        }
+        
+        .prompt-card:hover {
+            border-color: var(--accent-blue);
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(129, 140, 248, 0.2));
+        }
+        
+        .prompt-card.active {
+            border-color: var(--accent-blue);
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.4), rgba(129, 140, 248, 0.4));
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+        }
+        
+        .prompt-card-close {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .prompt-card:hover .prompt-card-close {
+            display: flex;
+        }
+        
+        .status { 
+            margin-top: 15px; 
+            padding: 12px; 
+            border-radius: 6px;
+            font-weight: 600;
+            display: none;
+            font-size: 14px;
+        }
+        
+        .status.success { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); display: block; }
+        .status.error { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); display: block; }
+        .status.loading { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); display: flex; align-items: center; gap: 8px; }
+        
+        .info-text { font-size: 13px; color: var(--text-sub); margin-top: 8px; }
+        .label { display: block; margin: 10px 0 8px 0; font-weight: 600; color: var(--text-main); font-size: 14px; }
+        
+        select {
+            padding: 10px 16px;
+            background: rgba(0, 0, 0, 0.3);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        /* 系統對話框 */
+        .system-message-dialog {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            width: 320px;
+            padding: 24px;
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+        }
+
+        .system-message-dialog.hidden { display: none; }
+        .system-message-dialog .close-btn { position: absolute; top: 12px; right: 12px; background: none; border: none; color: var(--text-sub); cursor: pointer; font-size: 18px; }
+        .system-message-dialog .icon { font-size: 40px; margin-bottom: 15px; }
+        .system-message-dialog .title { font-size: 18px; font-weight: 600; margin-bottom: 10px; }
+        .system-message-dialog .desc { font-size: 13px; color: var(--text-sub); margin-bottom: 20px; }
+        .system-message-dialog .action-btn { background: linear-gradient(135deg, #ff9500, #ff6b00); width: 100%; border: none; padding: 12px; color: white; border-radius: 8px; cursor: pointer; font-weight: 600; }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>📋 Meeting Assistant</h1>
+        
+        <!-- Section A: Voice Input -->
+        <div class="section">
+            <h2>🎤 語音和音檔輸入</h2>
+            
+            <div class="button-group">
+                <button id="recordBtn">🎙️ 開始錄音</button>
+                <button id="audioImportBtn">📁 導入音檔 (.mp3, .wav...)</button>
+            </div>
+            
+            <input type="file" id="audioFileInput" accept="audio/*" style="display: none;">
+            
+            <label class="label">語言設定</label>
+            <select id="langSelect">
+                <option value="zh-TW" selected>繁體中文</option>
+                <option value="en-US">English</option>
+                <option value="ja-JP">日本語</option>
+            </select>
+            
+            <p class="info-text">💡 即時語音錄音或導入音檔，內容將自動同步至下方輸入框</p>
+            
+            <label class="label">錄音文字內容</label>
+            <textarea id="textboxA" placeholder="錄音或轉錄的文字將顯示在此...也可以手動輸入內容"></textarea>
+        </div>
+        
+        <!-- Section B: Prompt -->
+        <div class="section">
+            <h2>✨ 自訂提示語 (Prompt)</h2>
+            
+            <div class="prompt-input-group">
+                <textarea id="textboxB" placeholder="例：請將會議內容整理成要點..."></textarea>
+                <button id="addPromptBtn" class="add-prompt-btn" title="新增提示語">+</button>
+            </div>
+            
+            <label class="label">常用提示語</label>
+            <div class="prompt-cards-container" id="promptCardsContainer">
+                <!-- Cards injected by JS -->
+            </div>
+        </div>
+        
+        <!-- Section C: Output -->
+        <div class="section">
+            <h2>📝 會議記錄生成</h2>
+            
+            <div class="button-group">
+                <button class="success" id="generateBtn">🤖 生成會議記錄</button>
+                <button class="success" id="downloadBtn">⬇️ 下載 .md 檔案</button>
+            </div>
+            
+            <label class="label">會議記錄結果</label>
+            <textarea id="textboxC" placeholder="會議記錄將在此顯示..." readonly></textarea>
+            
+            <div id="statusMsg" class="status"></div>
+        </div>
+    </div>
+
+    <!-- System Message Dialog -->
+    <div class="system-message-dialog" id="systemDialog">
+        <button class="close-btn" onclick="closeDialog()">✕</button>
+        <div class="icon">💖</div>
+        <div class="title">系統訊息</div>
+        <div class="desc">親愛的用戶，感謝您使用 Meeting Assistant！希望這項目能幫助到您！</div>
+        <div style="font-size: 12px; color: var(--accent-blue); margin-bottom: 12px; font-weight: 500;">喜歡這個工具嗎?</div>
+        <button class="action-btn" onclick="window.open('https://buymeacoffee.com/arthurwang', '_blank')">👉 贊助一杯咖啡 ☕</button>
+        <div style="margin-top: 15px; font-size: 11px; color: var(--text-sub); cursor: pointer;" onclick="copyShareLink()">分享給其他朋友 →</div>
+    </div>
+
+    <script>
+        const apiKey = ""; // Runtime provides the key
+        const MODEL = "gemini-2.5-flash-preview-09-2025";
+        
+        // --- State ---
+        let isRecording = false;
+        let recognition = null;
+        let finalTranscript = ""; 
+        let prompts = [
+            "請幫我做會議紀錄整理",
+            "請幫我整理成SPEC文件",
+            "幫我簡化為200字以內, 條列式重點整理"
+        ];
+        let activePromptIndex = 0;
+
+        // --- DOM ---
+        const recordBtn = document.getElementById('recordBtn');
+        const audioImportBtn = document.getElementById('audioImportBtn');
+        const textboxA = document.getElementById('textboxA');
+        const textboxB = document.getElementById('textboxB');
+        const textboxC = document.getElementById('textboxC');
+        const promptCardsContainer = document.getElementById('promptCardsContainer');
+        const statusMsg = document.getElementById('statusMsg');
+        const audioFileInput = document.getElementById('audioFileInput');
+
+        // --- Backoff ---
+        async function fetchWithRetry(url, options, maxRetries = 5) {
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.ok) return await response.json();
+                } catch (err) {
+                    if (i === maxRetries - 1) throw err;
+                }
+                await new Promise(res => setTimeout(res, Math.pow(2, i) * 1000));
+            }
+        }
+
+        // --- UI ---
+        function showStatus(text, type) {
+            statusMsg.textContent = text;
+            statusMsg.className = `status ${type}`;
+            statusMsg.style.display = 'block';
+            if (type !== 'loading') {
+                setTimeout(() => { statusMsg.style.display = 'none'; }, 5000);
+            }
+        }
+
+        function closeDialog() {
+            document.getElementById('systemDialog').classList.add('hidden');
+        }
+
+        function copyShareLink() {
+            const text = "推薦一個超好用的會議記錄助手 Meeting Assistant！";
+            const dummy = document.createElement("textarea");
+            document.body.appendChild(dummy);
+            dummy.value = text;
+            dummy.select();
+            document.execCommand("copy");
+            document.body.removeChild(dummy);
+            showStatus("分享文字已複製到剪貼簿", "success");
+        }
+
+        // --- Speech ---
+        function initRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                showStatus("您的瀏覽器不支援語音辨識", "error");
+                return;
+            }
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = document.getElementById('langSelect').value;
+
+            recognition.onresult = (event) => {
+                let interimTranscript = "";
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript + " ";
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
+                // 持續輸出到 TEXTBOX
+                textboxA.value = (finalTranscript + interimTranscript).trim();
+                textboxA.scrollTop = textboxA.scrollHeight;
+            };
+
+            recognition.onerror = (event) => {
+                console.error("Speech Error:", event.error);
+                stopRecording();
+            };
+        }
+
+        function toggleRecording() {
+            if (isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        }
+
+        function startRecording() {
+            if (!recognition) initRecognition();
+            try {
+                finalTranscript = textboxA.value ? textboxA.value + "\n" : "";
+                recognition.lang = document.getElementById('langSelect').value;
+                recognition.start();
+                isRecording = true;
+                recordBtn.textContent = "⏹️ 停止錄音";
+                recordBtn.classList.add('recording');
+                showStatus("正在錄音中，文字將即時顯示...", "loading");
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function stopRecording() {
+            if (recognition) recognition.stop();
+            isRecording = false;
+            recordBtn.textContent = "🎙️ 開始錄音";
+            recordBtn.classList.remove('recording');
+            statusMsg.style.display = 'none';
+        }
+
+        // --- Prompts ---
+        function renderPrompts() {
+            promptCardsContainer.innerHTML = '';
+            prompts.forEach((p, index) => {
+                const card = document.createElement('div');
+                card.className = `prompt-card ${index === activePromptIndex ? 'active' : ''}`;
+                card.innerHTML = `
+                    <span>${p}</span>
+                    <button class="prompt-card-close" onclick="removePrompt(event, ${index})">×</button>
+                `;
+                card.onclick = () => selectPrompt(index);
+                promptCardsContainer.appendChild(card);
+            });
+            if (prompts[activePromptIndex]) {
+                textboxB.value = prompts[activePromptIndex];
+            }
+        }
+
+        function selectPrompt(index) {
+            activePromptIndex = index;
+            renderPrompts();
+        }
+
+        function removePrompt(e, index) {
+            e.stopPropagation();
+            prompts.splice(index, 1);
+            if (activePromptIndex >= prompts.length) activePromptIndex = 0;
+            renderPrompts();
+        }
+
+        function addNewPrompt() {
+            const val = textboxB.value.trim();
+            if (val && !prompts.includes(val)) {
+                prompts.push(val);
+                activePromptIndex = prompts.length - 1;
+                renderPrompts();
+                showStatus("提示語已新增", "success");
+            }
+        }
+
+        // --- AI ---
+        async function generateNotes() {
+            const content = textboxA.value.trim();
+            const instruction = textboxB.value.trim();
+
+            if (!content) return showStatus("請先輸入會議內容", "error");
+
+            const btn = document.getElementById('generateBtn');
+            btn.disabled = true;
+            btn.classList.add('loading');
+            showStatus("Gemini 正在整理會議記錄...", "loading");
+
+            try {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`;
+                const prompt = `你是一個專業的會議秘書。
+以下是會議內容：
+${content}
+
+請根據此指示處理內容：
+${instruction}
+
+請使用繁體中文，並以 Markdown 格式輸出。`;
+
+                const data = await fetchWithRetry(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }]
+                    })
+                });
+
+                const result = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (result) {
+                    textboxC.value = result;
+                    showStatus("會議記錄生成完畢！", "success");
+                } else {
+                    throw new Error("未能獲取回應內容");
+                }
+            } catch (error) {
+                showStatus("生成失敗: " + error.message, "error");
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('loading');
+            }
+        }
+
+        async function handleAudioUpload(file) {
+            if (file.size > 25 * 1024 * 1024) return showStatus("音檔過大 (上限 25MB)", "error");
+            
+            // 補回：轉圈圈特效邏輯
+            audioImportBtn.disabled = true;
+            audioImportBtn.classList.add('loading');
+            showStatus("正在轉錄音檔中，請稍候...", "loading");
+
+            const reader = new FileReader();
+            reader.onload = async () => {
+                const base64Data = reader.result.split(',')[1];
+                try {
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`;
+                    const data = await fetchWithRetry(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{
+                                parts: [
+                                    { text: "請逐字轉錄這段音訊內容，轉換為純文字。不需要摘要。" },
+                                    { inlineData: { mimeType: file.type, data: base64Data } }
+                                ]
+                            }]
+                        })
+                    });
+                    const transcript = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (transcript) {
+                        textboxA.value += (textboxA.value ? '\n\n' : '') + `[導入音檔: ${file.name}]\n` + transcript;
+                        showStatus("音檔轉錄成功", "success");
+                    }
+                } catch (e) {
+                    showStatus("音檔處理失敗", "error");
+                } finally {
+                    // 補回：移除轉圈圈特效
+                    audioImportBtn.disabled = false;
+                    audioImportBtn.classList.remove('loading');
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function downloadMD() {
+            const content = textboxC.value;
+            if (!content) return showStatus("沒有內容可下載", "error");
+            const blob = new Blob([content], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Meeting_Notes_${new Date().toISOString().split('T')[0]}.md`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // --- Init ---
+        recordBtn.onclick = toggleRecording;
+        document.getElementById('addPromptBtn').onclick = addNewPrompt;
+        document.getElementById('generateBtn').onclick = generateNotes;
+        document.getElementById('downloadBtn').onclick = downloadMD;
+        audioImportBtn.onclick = () => audioFileInput.click();
+        audioFileInput.onchange = (e) => e.target.files[0] && handleAudioUpload(e.target.files[0]);
+
+        window.onload = () => {
+            renderPrompts();
+        };
+    </script>
+</body>
+</html>
